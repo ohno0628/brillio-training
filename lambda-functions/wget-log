@@ -1,0 +1,6 @@
+--2024-12-08 14:20:50--  https://awslambda-ap-ne-1-tasks.s3.ap-northeast-1.amazonaws.com/snapshots/116377175903/secrets-test-09e88f27-4589-4b67-94d0-a004e8e14d16?versionId=HZpfl_fkpXF_3G5HiGYfBm1ATYLDl9wO
+Resolving awslambda-ap-ne-1-tasks.s3.ap-northeast-1.amazonaws.com (awslambda-ap-ne-1-tasks.s3.ap-northeast-1.amazonaws.com)... 52.219.162.214, 3.5.158.238, 52.219.198.34, ...
+Connecting to awslambda-ap-ne-1-tasks.s3.ap-northeast-1.amazonaws.com (awslambda-ap-ne-1-tasks.s3.ap-northeast-1.amazonaws.com)|52.219.162.214|:443... connected.
+HTTP request sent, awaiting response... 403 Forbidden
+2024-12-08 14:20:50 ERROR 403: Forbidden.
+
