@@ -16,6 +16,7 @@ AWS CLIの出力形式はConfig設定時に指定した形式で出力される�
 ## CloudWatch
 <details>
 <summary>クリックして展開</summary>
+
 ### 基本構文
 ```
 aws logs [COMMAND] --[OPTION] <VALUE>
@@ -61,6 +62,7 @@ aws logs describe-log-streams --log-group-name <LogGroupName> --query "logStream
 ## S3
 <details>
 <summary>クリックして展開</summary>
+
 ### 基本構文
 ```
 aws s3 [COMMAND] [OPTIONS]
