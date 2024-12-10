@@ -3,6 +3,11 @@
 ## AWS CLI 概要
 - AWS CLI を使用して各サービスを操作するための便利なコマンド集。
 - **目的**: 運用効率化、トラブルシューティングの迅速化。
+- マネージメントコンソールを使う方が早く、視覚的にわかりやすい場合も多くある。~~単純な確認であればコンソールが吉~~
+  - CLIが便利な場合は自動化処理の実装や一括処、大量データを扱う際などに適す。 
+
+
+
 
 ## 出力形式を指定
 AWS CLIの出力形式はConfig設定時に指定した形式で出力される。
@@ -140,12 +145,57 @@ AWS CLI使うほうが効率的
 ## IAM
 <details>
 <summary>クリックして展開</summary>
-IAMロールにアタッチされているポリシー一覧を表示
+
+### 基本構文
 
 ```
-aws iam list-attached-role-policies --role-name RoleName
+aws iam [COMMAND] --[OPTION] <VALUE>
+```
+
+- `COMMAND`:実行するサブコマンド（例: list-users, create-role）
+- `OPTION`: コマンドのオプション（例: --user-name, --role-name）
+- `VALUE`: 指定する値
+
+ロールにアタッチされているポリシーを確認
+```
+aws iam list-attached-role-policies --role-name <ロール名>
+```
+
+カスタムポリシーを表示
+```
+aws iam list-policies --scope Local --query "Policies[*].[PolicyName, Arn]" --output table
+```
+**詳細**
+- `--scope Local`:アカウント内のカスタムポリ氏＾を対象とする。AWSが提供するマネージドポリシーは含まれない
+- `--query "Policies[*].[PolicyName, Arn]"`:ポリシー名とARNのみを取得
+
+
+ポリシーの詳細を取得
+```
+1. aws iam get-policy --policy-arn <PolicyArn>
+//1で取得したDefaultVersionIdを使用
+2. aws iam get-policy-version --policy-arn <PolicyArn> --version-id <DefaultVersionId>
+```
+
+</details>
+
+## SNS
+<details>
+<summary>クリックして展開</summary>
+
+### トピック一覧を表示
+
+```
+aws sns list-topics
+```
+
+トピックにメッセージを送信
+```
+aws sns publish --topic-arn <TopicArn> --message "<Message>"
 ```
 </details>
+
+
 
 ## Lambda
 <details>
