@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  AWS SAM template for Reservation System.
+
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: python3.9
+    Handler: app.lambda_handler
+    MemorySize: 128
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref ReservationsTable
+
+Resources:
+
+  ReservationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ReservationsTable
+      AttributeDefinitions:
+        - AttributeName: reservationId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: reservationId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  CreateReservationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: create_reservation.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReservationsTable
+      Events:
+        CreateReservationApi:
+          Type: Api
+          Properties:
+            Path: /reservations
+            Method: POST
+
+  GetReservationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: get_reservation.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ReservationsTable
+      Events:
+        GetReservationApi:
+          Type: Api
+          Properties:
+            Path: /reservations/{id}
+            Method: GET
+
+  UpdateReservationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: update_reservation.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReservationsTable
+      Events:
+        UpdateReservationApi:
+          Type: Api
+          Properties:
+            Path: /reservations/{id}
+            Method: PUT
+
+  DeleteReservationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: delete_reservation.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReservationsTable
+      Events:
+        DeleteReservationApi:
+          Type: Api
+          Properties:
+            Path: /reservations/{id}
+            Method: DELETE
+
+  ListReservationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: list_reservations.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ReservationsTable
+      Events:
+        ListReservationsApi:
+          Type: Api
+          Properties:
+            Path: /reservations
+            Method: GET
+
+Outputs:
+  ApiUrl:
+    Description: "API endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/reservations"
