@@ -9,8 +9,6 @@
 - Python 3.9 ランタイムに対応したローカル開発環境があること
 - （ローカルテスト用に）Docker環境が整っていること
 
-前提となる環境構築手順は別途準備！！
-
 ## プロジェクト構成（例）
 
 
@@ -138,7 +136,13 @@ curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
 ```
 
 ### トラブルシューティング
-
+詰まるポイントはローカルテスト部分ぐらい
+XXXXXXXX
 
 ### まとめ
-XXXXX
+XXXXXXXX
+
+
+残タスク
+別途、簡単な予約画面を用意しておく（HTML,CSS,JS）
+前提となる環境構築手順は別途準備
