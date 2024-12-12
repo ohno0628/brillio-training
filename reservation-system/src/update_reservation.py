@@ -13,10 +13,8 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "TABLE_NAME environment variable is not set"})
         }
 
-    # dynamodb = boto3.resource('dynamodb')
-    # table = dynamodb.Table(TABLE_NAME)
-    ENDPOINT_URL = "http://localhost:8000"
-    dynamodb = boto3.resource('dynamodb', endpoint_url=ENDPOINT_URL)
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(TABLE_NAME)
 
     # pathParametersのチェック
     if "pathParameters" not in event or "id" not in event["pathParameters"]:
@@ -37,10 +35,8 @@ def lambda_handler(event, context):
             "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"error": "Invalid JSON in request body"})
         }
-    
-    
+
     # 必須フィールドチェック
-    # (ここでは更新時もreservationIdは必須であり、idが指定されているのでそれを使う)
     body["reservationId"] = reservation_id
 
     # DynamoDB更新処理のエラーハンドリング
