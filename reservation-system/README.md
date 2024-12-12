@@ -94,21 +94,43 @@ sam deploy --guided --region ap-northeast-1
 ```
 デプロイ時の質問を書いてあげないと厳しい？
 
+```
+ログに表示されるOutputsの以下項目がアクセスURLとなる。
+Outputs                                                                            -----------------------------------------------------------------------------------
+Key                 ApiUrl                                                                                                                                                                
+Description         API endpoint URL                                                                                                                                                      
+Value               https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations                                                                       -----------------------------------------------------------------------------------
+```
+
 ### 本番環境での動作確認 (curl)
 
 **予約作成 (POST)**
+```
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"resourceName":"一番館","time":"2024-12-11T10:00"}' \
+  https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
+```
 
 予約取得 (GET)
 ```
+curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/ <reservationId>
 ```
 予約更新 (PUT)
 ```
+curl -X PUT -H "Content-Type: application/json" \
+  -d '{"resourceName":"弐番館,"time":"2024-12-12T10:00"}' \
+  https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/<reservationId>
+
 ```
 予約削除 (DELETE)
 ```
+curl -X DELETE \
+  https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/<reservationId>
+
 ```
 一覧取得 (GET)
 ```
+curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
 ```
 
 ### トラブルシューティング
