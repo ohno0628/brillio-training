@@ -111,24 +111,26 @@ curl -X POST -H "Content-Type: application/json" \
   https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
 ```
 
-予約取得 (GET)
+**予約取得 (GET)**
 ```
 curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/ <reservationId>
 ```
-予約更新 (PUT)
+
+**予約更新 (PUT)**
 ```
 curl -X PUT -H "Content-Type: application/json" \
   -d '{"resourceName":"弐番館,"time":"2024-12-12T10:00"}' \
   https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/<reservationId>
 
 ```
-予約削除 (DELETE)
+
+**予約削除 (DELETE)**
 ```
 curl -X DELETE \
   https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/<reservationId>
-
 ```
-一覧取得 (GET)
+
+**一覧取得 (GET)**
 ```
 curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
 ```
@@ -137,3 +139,4 @@ curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
 
 
 ### まとめ
+XXXXX
