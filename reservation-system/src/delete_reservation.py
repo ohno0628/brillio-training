@@ -59,6 +59,9 @@ def lambda_handler(event, context):
     # 正常終了
     return {
         "statusCode": 200,
-        "headers": {"Content-Type": "application/json"},
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
         "body": json.dumps({"message": "Reservation deleted"})
     }

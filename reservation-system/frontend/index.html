@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>予約管理システム</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>予約管理システム</h1>
+<div>
+  <h2>新しい予約を作成</h2>
+  <form id="create-form">
+    <label>リソース名：<input type="text" id="resourceName"></label><br><br>
+    <!-- datetime-localで日時のUIを提供 -->
+    <label>日時：<input type="datetime-local" id="time"></label><br><br>
+    <button type="submit">予約を作成</button>
+  </form>
+</div>
+
+<div class="reservation-list">
+  <h2>予約一覧</h2>
+  <div class="filter-area">
+    <input type="text" id="search" placeholder="リソース名で検索...">
+    <select id="sort">
+      <option value="">並び替え...</option>
+      <option value="resourceNameAsc">リソース名 (昇順)</option>
+      <option value="resourceNameDesc">リソース名 (降順)</option>
+      <option value="timeAsc">日時 (早い順)</option>
+      <option value="timeDesc">日時 (遅い順)</option>
+    </select>
+  </div>
+  <div id="reservations-container">
+    読み込み中...
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

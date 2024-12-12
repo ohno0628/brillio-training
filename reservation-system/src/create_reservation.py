@@ -93,6 +93,9 @@ def lambda_handler(event, context):
 
     return {
         "statusCode": 201,
-        "headers": {"Content-Type": "application/json"},
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
         "body": json.dumps({"message": "Reservation created", "reservationId": reservation_id})
     }

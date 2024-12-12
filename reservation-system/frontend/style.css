@@ -1,0 +1,22 @@
+body {
+  font-family: sans-serif;
+  margin: 20px;
+}
+
+.reservation-list {
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.reservation-item {
+  border-bottom: 1px solid #eee;
+  padding: 5px 0;
+}
+
+.filter-area {
+  margin-bottom: 10px;
+}
+.filter-area input, .filter-area select {
+  margin-right: 10px;
+}

@@ -27,6 +27,18 @@ Resources:
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
+  # 新たにApiリソースを定義（Nameを定義することで２度目以降のデプロイでAPIエンドポイントが変更されない）
+  MyReservationApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: MyReservationApi
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+        AllowCredentials: "'false'"
+
   CreateReservationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -39,6 +51,7 @@ Resources:
         CreateReservationApi:
           Type: Api
           Properties:
+            RestApiId: !Ref MyReservationApi
             Path: /reservations
             Method: POST
 
@@ -54,6 +67,7 @@ Resources:
         GetReservationApi:
           Type: Api
           Properties:
+            RestApiId: !Ref MyReservationApi
             Path: /reservations/{id}
             Method: GET
 
@@ -69,6 +83,7 @@ Resources:
         UpdateReservationApi:
           Type: Api
           Properties:
+            RestApiId: !Ref MyReservationApi
             Path: /reservations/{id}
             Method: PUT
 
@@ -84,6 +99,7 @@ Resources:
         DeleteReservationApi:
           Type: Api
           Properties:
+            RestApiId: !Ref MyReservationApi
             Path: /reservations/{id}
             Method: DELETE
 
@@ -99,10 +115,11 @@ Resources:
         ListReservationsApi:
           Type: Api
           Properties:
+            RestApiId: !Ref MyReservationApi
             Path: /reservations
             Method: GET
 
 Outputs:
   ApiUrl:
     Description: "API endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/reservations"
+    Value: !Sub "https://${MyReservationApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/reservations"

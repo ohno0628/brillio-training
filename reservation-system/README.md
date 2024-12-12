@@ -1,6 +1,10 @@
 # AWS SAM を用いた予約システム構築手順まとめ
 
-本ドキュメントでは、AWS SAMを活用してDynamoDBをバックエンドとしたシンプルな予約システムを構築・テストし、本番環境へデプロイして`curl`での動作確認を行うまでの流れをまとめています。
+本ドキュメントでは、AWS SAMを活用してDynamoDBをバックエンドとしたシンプルな予約システムを構築・テストし、本番環境へデプロイ。
+デプロイしたAPI Gateway + Lambda + DynamoDBで構成されています。  
+フロントエンド(HTML,CSS,JS)はS3静的ウェブサイトホスティングを用いて公開します。
+
+**あくまでAWSサービスを使った構築イメージをつかむための手順でセキュリティフル無視なので作成後は必ず削除する。非公開とすること！！**
 
 ## 前提条件
 
@@ -10,9 +14,12 @@
 - （ローカルテスト用に）Docker環境が整っていること
 
 ## プロジェクト構成（例）
+AWS環境構成図
+![alt text](./images/reservation-system-AWS.jpg "構成図")
 
 
-```plaintext
+**SAMプロジェクト構成**
+```
 reservation-system/
 ├── README.md (本ドキュメント)
 ├── src/
@@ -121,7 +128,6 @@ curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/ <reserva
 curl -X PUT -H "Content-Type: application/json" \
   -d '{"resourceName":"弐番館,"time":"2024-12-12T10:00"}' \
   https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations/<reservationId>
-
 ```
 
 **予約削除 (DELETE)**
@@ -134,6 +140,44 @@ curl -X DELETE \
 ```
 curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
 ```
+
+### 静的サイトホスティング
+
+#### 手順概要
+1. **S3バケット作成**
+2. **バケットポリシーでパブリックアクセスを許可** (本来CloudFront経由であるべきは触れないこと)
+3. **静的ウェブサイトホスティング有効化**  
+4. **HTML/CSS/JSファイルをアップロード**
+5. **S3ウェブサイトエンドポイントURLでブラウザからアクセス可能**
+
+
+#### 詳細手順
+1.**S3バケット作成**
+```
+ユニークである必要があるため適宜名前は変更すること
+
+aws s3 mb s3://my-reservation-frontend
+```
+#### パブリックアクセス許可設定
+```
+json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::my-reservation-frontend/*"
+    }
+  ]
+}
+
+```
+
+続く～～～～～～～～～～
+
 
 ### トラブルシューティング
 詰まるポイントはローカルテスト部分ぐらい
