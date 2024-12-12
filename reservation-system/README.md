@@ -45,3 +45,73 @@ sam build
 
 ## ローカルでのテスト (オプション)
 ### ローカルDynamoDBの準備
+
+1. DynamoDB Local起動
+
+```
+docker run -p 8000:8000 amazon/dynamodb-local
+```
+
+2. テーブル作成
+```
+aws dynamodb create-table \
+    --table-name ReservationsTable \
+    --attribute-definitions AttributeName=reservationId,AttributeType=S \
+    --key-schema AttributeName=reservationId,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --endpoint-url http://localhost:8000 \
+    --region ap-northeast-1
+```
+`env.json`などで`TABLE_NAME`を設定して、ローカルで`sam local start-api`実行時にLambdaへ環境変数を渡す。
+
+
+### SAMローカル起動
+```
+sam local start-api --env-vars env.json
+```
+
+- http://127.0.0.1:3000でAPIが起動
+- curlコマンドでPOST /reservationsなどを実行し、ローカル環境での動作を確認
+  ```
+  curlの実行例を記載
+  ```
+
+### 本番用へのコード修正とデプロイ
+ローカルで確認後、本番環境用に以下を修正
+
+- `endpoint_url`や`aws_access_key_id/aws_secret_access_key`の削除（デフォルト設定に戻す）
+- `dynamodb = boto3.resource('dynamodb')` のみでアクセス可能な状態
+- 認証なし公開で良いかといったデプロイ時の質問に対応できるようにする
+
+1. 再ビルド
+```
+sam build
+```
+
+2. デプロイ
+```
+sam deploy --guided --region ap-northeast-1
+```
+デプロイ時の質問を書いてあげないと厳しい？
+
+### 本番環境での動作確認 (curl)
+
+**予約作成 (POST)**
+
+予約取得 (GET)
+```
+```
+予約更新 (PUT)
+```
+```
+予約削除 (DELETE)
+```
+```
+一覧取得 (GET)
+```
+```
+
+### トラブルシューティング
+
+
+### まとめ
