@@ -37,7 +37,7 @@ reservation-system/
 ## 画面イメージ
 デプロイ後のWeb画面イメージ
 
-![alt text](./images/Screen_Image.jpg "構成図")
+![alt text](./images/Screen_Image.jpg "Web画面")
 
 
 `template.yaml`では以下を定義します。  
