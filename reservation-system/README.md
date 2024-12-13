@@ -48,13 +48,21 @@ reservation-system/
 
 ## SAMプロジェクトのビルド
 
+**SAMプロジェクトの初期化（初回のみ）**
+
+対話的なプロンプトに従い、`template.yaml`等が作成される。
+
+```
+sam init
+```
+
 ソースコード・テンプレートが準備できたら以下を実行します。
 
 ```bash
 sam build
 ```
 
-これでtemplate.yamlに基づき、Lambda用のパッケージが.aws-sam/build配下に生成されます。
+これで`template.yaml`に基づき、Lambda用のパッケージが`.aws-sam/build`配下に生成されます。
 
 ## ローカルでのテスト (オプション)
 ### ローカルDynamoDBの準備
@@ -83,7 +91,7 @@ aws dynamodb create-table \
 sam local start-api --env-vars env.json
 ```
 
-- http://127.0.0.1:3000でAPIが起動
+- `http://127.0.0.1:3000`でAPIが起動
 - curlコマンドでPOST /reservationsなどを実行し、ローカル環境での動作を確認
   ```
   curlの実行例を記載
