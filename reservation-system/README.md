@@ -58,7 +58,7 @@ sam init
 
 ソースコード・テンプレートが準備できたら以下を実行します。
 
-```bash
+```
 sam build
 ```
 
@@ -112,8 +112,21 @@ sam build
 2. デプロイ
 ```
 sam deploy --guided --region ap-northeast-1
+
+実行時に対話プロンプト内容(下記はあくまで学習用の環境での参考)
+Stack Name [reservation-system]:例: `reservation-system`
+AWS Region [ap-northeast-1]:空欄のままENTER
+Confirm changes before deploy [Y/n]:y
+Allow SAM CLI IAM role creation [Y/n]:y
+Disable rollback [y/N]:n
+CreateReservationFunction has no authentication. Is this okay? [y/N]:y
+GetReservationFunction has no authentication. Is this okay? [y/N]: y　←　FuncitionCodeの数だけ聞かれる
+Save arguments to configuration file [Y/n]:y
+SAM configuration file [samconfig.toml]:空欄のままENTER
+SAM configuration environment [default]:空欄のままENTER
+Deploy this changeset? [y/N]:y
 ```
-デプロイ時の質問を書いてあげないと厳しい？
+
 
 ```
 ログに表示されるOutputsの以下項目がアクセスURLとなる。
@@ -166,13 +179,19 @@ curl https://<XXXXXXXX>.ap-northeast-1.amazonaws.com/Prod/reservations
 
 
 #### 詳細手順
-1.**S3バケット作成**
+1. S3バケット作成
 ```
 ユニークである必要があるため適宜名前は変更すること
 
 aws s3 mb s3://my-reservation-frontend
 ```
-#### パブリックアクセス許可設定
+2. パブリックアクセス許可設定
+- S3コンソールでmy-reservation-frontendバケットを開く
+- Permissionsタブ → Public access settings(ブロックパブリックアクセス)をオフ
+
+  セキュリティがばポイント
+
+- バケットポリシーで`GetObject`許可を追加 (以下は例):
 ```
 json
 {
@@ -190,8 +209,45 @@ json
 
 ```
 
-続く～～～～～～～～～～
+3. フロントエンドファイルのアップロード
+`frontend/`配下の`index.html`,`style.css`,`app.js`をS3にアップロード
 
+```
+aws s3 sync frontend/ s3://my-reservation-frontend/
+```
+
+4. 静的ウェブサイトホスティング有効化
+- S3コンソールでmy-reservation-frontendバケットを開く
+- 「プロパティ」タブの静的ウェブサイトホスティングから編集から以下を設定
+   - 静的ウェブサイトホスティングを有効にする。
+   - インデックスドキュメントに`index.html`を指定
+- エンドポイントURLが表示されるため、そこからWebアクセス可能となる。
+画面が表示されればGoal
+
+
+#### ポイント
+- CROS設定について
+
+  フロントエンド（S3）とバックエンド（APIゲートウェイ）は異なるオリジンを持つためCROS設定が必要 `template.yaml`の`AllowOrigin: "'*'"`が該当箇所にあたる
+  ```
+    MyReservationApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: MyReservationApi
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+        AllowCredentials: "'false'"
+  ```
+[オリジン（Origin）とCORSの関係を学ぶ](https://zenn.dev/reds/articles/7b6c0c2ec4599a)
+
+- 本番運用の場合
+  
+  - 通常、パブリックに直接S3エンドポイントを公開せず、CloudFrontを前段に置きHTTPS対応を行うことが一般的
+  - 現状、誰でも入れる状態となるため、認証の機構を入れる。
+  - バケットポリシーをやCROS設定を`'*'`にせず最小限とすることでセキュリティリスクを軽減
 
 ### トラブルシューティング
 詰まるポイントはローカルテスト部分ぐらい
@@ -202,5 +258,4 @@ XXXXXXXX
 
 
 残タスク
-別途、簡単な予約画面を用意しておく（HTML,CSS,JS）
 前提となる環境構築手順は別途準備
