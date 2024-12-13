@@ -13,12 +13,12 @@
 - Python 3.9 ランタイムに対応したローカル開発環境があること
 - （ローカルテスト用に）Docker環境が整っていること
 
-## プロジェクト構成（例）
-AWS環境構成図
+## AWS環境構成図
+
 ![alt text](./images/reservation-system-AWS.jpg "構成図")
 
 
-**SAMプロジェクト構成**
+## SAMプロジェクト構成
 ```
 reservation-system/
 ├── README.md (本ドキュメント)
@@ -33,6 +33,12 @@ reservation-system/
 ├
 ├─ env.json
 ```
+
+## 画面イメージ
+デプロイ後のWeb画面イメージ
+
+![alt text](./images/Screen_Image.jpg "構成図")
+
 
 `template.yaml`では以下を定義します。  
 - DynamoDBテーブル `ReservationsTable`
