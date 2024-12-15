@@ -1,4 +1,4 @@
-// URL
+// URLは適宜変更してください
 const API_BASE_URL = "https://e6pv868gzj.execute-api.ap-northeast-1.amazonaws.com/Prod";
 
 let allReservations = []; // 全件を保持
@@ -13,19 +13,18 @@ async function fetchReservations() {
 // フィルタ・ソートして描画
 async function renderReservations() {
   const container = document.getElementById('reservations-container');
-  container.innerHTML = 'Loading...';
+  container.innerHTML = '読み込み中...';
 
   // allReservationsが未取得なら取得
   if (allReservations.length === 0) {
     allReservations = await fetchReservations();
   }
 
-  // 検索テキストとソートオプションを取得
   const searchText = document.getElementById('search').value.toLowerCase();
   const sortOption = document.getElementById('sort').value;
 
   // 検索フィルタ適用
-  let filtered = allReservations.filter(item => 
+  let filtered = allReservations.filter(item =>
     item.resourceName.toLowerCase().includes(searchText)
   );
 
@@ -41,7 +40,7 @@ async function renderReservations() {
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<p>No Reservations Found</p>';
+    container.innerHTML = '<p>予約が見つかりません</p>';
     return;
   }
 
@@ -51,9 +50,10 @@ async function renderReservations() {
     div.className = 'reservation-item';
     div.innerHTML = `
       <strong>ID:</strong> ${item.reservationId}<br>
-      <strong>Resource:</strong> ${item.resourceName}<br>
-      <strong>Time:</strong> ${item.time}<br>
-      <button onclick="deleteReservation('${item.reservationId}')">Delete</button>
+      <strong>リソース名：</strong> ${item.resourceName}<br>
+      <strong>日時：</strong> ${item.time}<br>
+      <button onclick="deleteReservation('${item.reservationId}')">削除</button>
+      <button onclick="startEditReservation('${item.reservationId}', '${item.resourceName}', '${item.time}')">更新</button>
     `;
     container.appendChild(div);
   });
@@ -69,6 +69,33 @@ async function deleteReservation(id) {
   await renderReservations();
 }
 
+// 編集開始（更新用）
+function startEditReservation(id, currentResource, currentTime) {
+  const newResource = prompt("新しいリソース名を入力してください：", currentResource);
+  if (newResource === null) return;
+  const newTime = prompt("新しい日時(YYYY-MM-DDTHH:MM)を入力してください：", currentTime);
+  if (newTime === null) return;
+
+  updateReservation(id, newResource, newTime);
+}
+
+// 予約更新
+async function updateReservation(id, resourceName, time) {
+  const res = await fetch(`${API_BASE_URL}/reservations/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resourceName, time })
+  });
+
+  if (res.ok) {
+    alert('予約が更新されました！');
+    allReservations = [];
+    await renderReservations();
+  } else {
+    alert('予約の更新に失敗しました');
+  }
+}
+
 // 予約作成フォームハンドリング
 document.getElementById('create-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -82,16 +109,16 @@ document.getElementById('create-form').addEventListener('submit', async (e) => {
     },
     body: JSON.stringify({resourceName, time})
   });
-  
+
   if (res.ok) {
-    alert('Reservation created!');
+    alert('予約が作成されました！');
     document.getElementById('resourceName').value = '';
     document.getElementById('time').value = '';
     // 新規作成後はallReservationsをクリアして再取得
     allReservations = [];
     await renderReservations();
   } else {
-    alert('Failed to create reservation');
+    alert('予約の作成に失敗しました');
   }
 });
 

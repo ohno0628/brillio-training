@@ -1,0 +1,103 @@
+{
+    "Users": [
+        {
+            "Path": "/",
+            "UserName": "dorablo-admin",
+            "UserId": "AIDARWGE6Y5PVU2KDQ4L5",
+            "Arn": "arn:aws:iam::116377175903:user/dorablo-admin",
+            "CreateDate": "2023-04-26 04:00:17+00:00",
+            "PasswordLastUsed": "2024-05-02 06:40:17+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "dorablo-user01",
+            "UserId": "AIDARWGE6Y5P4N2E3I544",
+            "Arn": "arn:aws:iam::116377175903:user/dorablo-user01",
+            "CreateDate": "2023-04-30 05:26:04+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "eks-demo",
+            "UserId": "AIDARWGE6Y5P5DEDDRTYH",
+            "Arn": "arn:aws:iam::116377175903:user/eks-demo",
+            "CreateDate": "2024-12-01 06:27:06+00:00",
+            "PasswordLastUsed": "2024-12-11 04:33:41+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "Lambda-poc-user",
+            "UserId": "AIDARWGE6Y5PVL6TZ7D65",
+            "Arn": "arn:aws:iam::116377175903:user/Lambda-poc-user",
+            "CreateDate": "2024-05-02 06:32:39+00:00",
+            "PasswordLastUsed": "2024-07-28 08:08:01+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "ohno3-user",
+            "UserId": "AIDARWGE6Y5P3U2VKBMWF",
+            "Arn": "arn:aws:iam::116377175903:user/ohno3-user",
+            "CreateDate": "2024-05-11 21:08:48+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "qwer",
+            "UserId": "AIDARWGE6Y5PYT3SE7F3A",
+            "Arn": "arn:aws:iam::116377175903:user/qwer",
+            "CreateDate": "2024-05-11 07:02:39+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "tests",
+            "UserId": "AIDARWGE6Y5P5MRGW2ZA2",
+            "Arn": "arn:aws:iam::116377175903:user/tests",
+            "CreateDate": "2024-05-11 06:55:52+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "user1",
+            "UserId": "AIDARWGE6Y5PVTOSXHYDL",
+            "Arn": "arn:aws:iam::116377175903:user/user1",
+            "CreateDate": "2023-04-26 06:09:40+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "user2",
+            "UserId": "AIDARWGE6Y5P2IQPX3SPR",
+            "Arn": "arn:aws:iam::116377175903:user/user2",
+            "CreateDate": "2023-04-26 06:09:40+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "user3",
+            "UserId": "AIDARWGE6Y5PUYF4ACU5Z",
+            "Arn": "arn:aws:iam::116377175903:user/user3",
+            "CreateDate": "2023-04-26 06:09:40+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "user4",
+            "UserId": "AIDARWGE6Y5PZGRCPSJ2U",
+            "Arn": "arn:aws:iam::116377175903:user/user4",
+            "CreateDate": "2023-04-26 06:09:41+00:00"
+        },
+        {
+            "Path": "/",
+            "UserName": "user5",
+            "UserId": "AIDARWGE6Y5P55VWLWIVJ",
+            "Arn": "arn:aws:iam::116377175903:user/user5",
+            "CreateDate": "2023-04-26 06:09:41+00:00"
+        }
+    ],
+    "IsTruncated": false,
+    "ResponseMetadata": {
+        "RequestId": "8c66244e-b701-4309-b6b5-7d1b3f8b8544",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Wed, 11 Dec 2024 05:02:27 GMT",
+            "x-amzn-requestid": "8c66244e-b701-4309-b6b5-7d1b3f8b8544",
+            "content-type": "text/xml",
+            "content-length": "3519"
+        },
+        "RetryAttempts": 0
+    }
+}
