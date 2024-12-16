@@ -454,13 +454,50 @@ sudo systemctl status flask-app
          database=secret['database']
       )
       ```
-### 残タスク
+
+
+
+### 実技として
+- ALBの設定
+- Web/APサーバを2台構成にしてトラフィックが分かれることの確認
+- HTTPS化
+- サブネットやセキュリティグループをきれいにする。
+
+とりあえずの構成図と目指す形の構成図を用意
+
+
+ALB -ACM
+参考手順
+[自己証明書の作成](../tips/AWS/ACM.md)
+
+EC2もしくはローカルで実行
+```
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+```
+対話の設定は適当でよい
+- key.pem：秘密鍵
+- cert.pem：証明書
+
+1. ACMを開く
+2. インポートを選択
+   - **証明書：**`cert.pem`の内容を貼り付け
+   - **秘密鍵：**`key.pem`の内容を貼り付け
+3. インポートをクリック
+4. 
+
+[ロードバランサーの設定](../tips/AWS/LB.md)
+
+リスナーの設定方法
+
+HTTPからHTTPSへのリダイレクト設定
+
+自己著名証明書（俗にいうオレオレ証明）はブラウザ警告が出るが無視して
+テストとしては問題ない。
+HTTPでアクセスしてリダイレクトされていることが確認できればOK
 
 DBへのアクセスをや指定方法を直書きやめる
 
-パブリックIPを固定で付与
-albの利用
-HTTPS対応（TLS/SSL）
+
 
 同じソースでコンテナ化
 各リソース（VPC、S3、EC2、RDS）を段階的にCFn化。
