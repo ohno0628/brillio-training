@@ -10,9 +10,9 @@ s3 = boto3.client('s3')
 
 # RDS接続設定
 connection = pymysql.connect(
-    host='database-1.c3ieg4gami7e.ap-northeast-1.rds.amazonaws.com',
+    host='<RDSエンドポイント>',
     user='admin',
-    password='Ohno!3340',
+    password='<Password>',
     database='image_app'
 )
 
