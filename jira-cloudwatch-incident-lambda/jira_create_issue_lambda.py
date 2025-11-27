@@ -8,18 +8,22 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from urllib3 import Retry, Timeout
 
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# 環境名（dev, staging, prod など）を環境変数から取得　secresmanager のシークレット名に利用するなど
 APP_ENV = os.getenv("APP_ENV", "dev")
 
+
+# ==== HTTP クライアント（Jira呼び出し用）====
 http = urllib3.PoolManager(
     retries=Retry(
         total=3,
-        backoff_factor=0.5,
-        status_forcelist=[500, 502, 503, 504],
+        backoff_factor=0.5,                     # 0.5s, 1s, 2s... の間隔でリトライ
+        status_forcelist=[500, 502, 503, 504],  # サーバーエラー時にリトライ
         ),
-    timeout=Timeout(connect=3.0, read=8.0) 
+    timeout=Timeout(connect=3.0, read=8.0)      # タイムアウト設定（接続3秒、読み取り8秒）
 )
 
 # ==== Secrets Manager 設定 ====
@@ -27,7 +31,7 @@ http = urllib3.PoolManager(
 JIRA_SECRET_NAME = os.getenv("JIRA_SECRET_NAME", "jira/poc")
 
 _secrets_client = boto3.client("secretsmanager")
-_secret_cache = None  # 一度取得した secret をプロセス内でキャッシュ
+_secret_cache = None  # 一度取得した secret をLambdaコンテナ内でキャッシュ
 
 
 REQUIRED_SECRET_KEYS = [
@@ -88,6 +92,142 @@ def _jira_auth_header(secret: dict) -> dict:
     }
 
 
+# ===== 既存チケット検索（重複起票防止） =====
+def _find_existing_issue_by_summary(secret: dict, summary: str) -> str | None:
+    """
+    指定した summary を持つ未解決の Jira Issue が存在するか検索し、
+    存在すれば Issue Key を返す。なければ None を返す。
+    """
+    base_url = secret["JIRA_BASE_URL"].rstrip("/")
+    project_key = secret["JIRA_PROJECT_KEY"]
+
+    # statusCategory != Done で未解決チケットを絞り込む
+    jql = (
+        f'project = "{project_key}" '
+        f' AND summary ~ "{summary}" '
+        f'AND statusCategory != Done '
+        f' ORDER BY created DESC'
+    )
+
+    url = f"{base_url}/rest/api/3/search/jql"
+    payload = {
+        "jql": jql,
+        "maxResults": 1,
+        "fields": ["key"],
+    }
+
+
+    headers = _jira_auth_header(secret)
+    encoded_body = json.dumps(payload).encode("utf-8")
+
+    logger.info("Searching existing Jira issue with JQL: %s", jql)
+    resp = http.request("POST", url, headers=headers, body=encoded_body)
+
+    if resp.status >= 300:
+        # 重複チェックに失敗しても「起票自体は試みる」ため、ここで例外を投げるのではなくログだけのこしてNoneを返す
+        try:
+            body_str = resp.data.decode("utf-8")
+        except Exception:
+            body_str = str(resp.data)
+        logger.error("Failed to search Jira issues: %s %s", resp.status, body_str)
+        raise Exception(f"Jira API error: {resp.status}")
+
+    data = json.loads(resp.data.decode("utf-8"))
+    issues = data.get("issues", [])
+    if not issues:
+        return None
+
+    return issues[0].get("key")
+
+
+# ===== 既存チケットへのコメント用 ADF =====
+def _build_comment_adf(
+    summary: str,
+    new_state: str,
+    reason: str,
+    timestamp: str,
+    namespace: str,
+    metric_name: str,
+    region: str,
+    lambda_name: str,
+) -> dict:
+    """
+    Jira Cloud が期待する ADF(Atlassian Document Format) に変換。
+    シンプルに「プレーンテキスト1段落」として送る。
+    発報タイミング、State、Reason を含むコメントを作成
+    """
+    text_lines = [
+        "*Alarm Fired Again*",
+        f"- State: {new_state}",
+        f"- Time: {timestamp}",
+        f"- Lambda: {lambda_name or 'N/A'}",
+        f"- Metric: {namespace} / {metric_name}",
+        f"- Region: {region}",
+        f"- Reason: {reason}",
+        "",
+        "This alarm was triggered again and appended by AWS Lambda.",
+    ]
+
+    # text = f"CloudWatch alarm '{summary}' fired again. Appended by AWS Lambda."
+    # return {
+    #     "type": "doc",
+    #     "version": 1,
+    #     "content": [
+    #         {
+    #             "type": "paragraph",
+    #             "content": [{"type": "text", "text": text}],
+    #         }
+    #     ],
+    # }
+    # ADF の paragraph ノードに変換
+    return {
+        "type": "doc",
+        "version": 1,
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": line + "\n"} for line in text_lines]
+            }
+        ]
+    }
+
+#===== 既存チケットへのコメント追加 =====
+def _add_comment_to_issue(secret: dict, issue_key: str, summary: str, new_state: str,
+                          reason: str, timestamp: str, namespace: str, metric_name: str,
+                          region: str, lambda_name: str) -> None:
+    """
+    既存の Jira 課題(issue_key)にコメントを1件追加する。
+    """
+    base_url = secret["JIRA_BASE_URL"].rstrip("/")
+    url = f"{base_url}/rest/api/3/issue/{issue_key}/comment"
+
+    body = {
+        "body": _build_comment_adf(
+            summary, new_state, reason, timestamp,
+            namespace, metric_name, region, lambda_name
+        )
+    }
+
+    headers = _jira_auth_header(secret)
+    encoded_body = json.dumps(body).encode("utf-8")
+
+    logger.info("Adding comment to existing issue %s", issue_key)
+    resp = http.request("POST", url, body=encoded_body, headers=headers)
+
+    if resp.status >= 300:
+        try:
+            body_str = resp.data.decode("utf-8")
+        except Exception:
+            body_str = str(resp.data)
+        logger.error("Failed to add comment to issue %s: %s %s", issue_key, resp.status, body_str)
+        # コメント失敗しても致命的ではないので、raise はせずログだけ残す
+        return
+
+    logger.info("Comment added to issue %s", issue_key)
+
+
+
+
 # def _to_adf(text: str) -> dict:
 #     """
 #     Jira Cloud が期待する ADF(Atlassian Document Format) に変換。
@@ -104,10 +244,18 @@ def _jira_auth_header(secret: dict) -> dict:
 #         ],
 #     }
 
+
+# ===== Jira チケット本文（Description）用 ADF =====
 def build_adf_description(
         alarm_name, new_state, reason, region,
         namespace, metric_name, lambda_name, message
-):
+) -> dict:
+    """
+    Jiraのdescriptionフィールド用にADF形式で組み立てる
+    - Alarm Info
+    - Metric Info
+    - 生のSNSメッセージ（JSON）をコードブロックで格納
+    """
     return {
         "type": "doc",
         "version": 1,
@@ -198,7 +346,7 @@ def build_adf_description(
                     },
                 ]
             },
-            # === Raw SNS Message ===
+            # === Raw SNS Message === 見にくいので必要な部分のみ抜粋するように変更も検討
             {
                 "type": "heading",
                 "attrs": {"level": 2},
@@ -218,34 +366,37 @@ def build_adf_description(
         ],
     }
 
-def _build_description_text(alarm_name, new_state, reason, region, namespace, metric_name, lambda_name, message):
+# def _build_description_text(alarm_name, new_state, reason, region, namespace, metric_name, lambda_name, message):
 
-    parts = [
-        "*Alarm Info*",
-        f" - Name: {alarm_name}",
-        f" - State: {new_state}",
-        f" - Reason: {reason}",
-        "",
-        "*Metric Info*",
-        f" - Namespace: {namespace}",
-        f" - Metric: {metric_name}",
-        f" - Region: {region}",
-        f" - Lambda: {lambda_name or 'N/A'}",
-        "",
-        "*Raw SNS Message*",
-        "```json",
-        json.dumps(message, indent=2, ensure_ascii=False),
-        "```",
-        "",
-        "----",
-        "This issue was automatically created by AWS Lambda (CloudWatch Alarm → SNS → Lambda → Jira).",
-    ]
-    return "\n".join(parts)
+#     parts = [
+#         "*Alarm Info*",
+#         f" - Name: {alarm_name}",
+#         f" - State: {new_state}",
+#         f" - Reason: {reason}",
+#         "",
+#         "*Metric Info*",
+#         f" - Namespace: {namespace}",
+#         f" - Metric: {metric_name}",
+#         f" - Region: {region}",
+#         f" - Lambda: {lambda_name or 'N/A'}",
+#         "",
+#         "*Raw SNS Message*",
+#         "```json",
+#         json.dumps(message, indent=2, ensure_ascii=False),
+#         "```",
+#         "",
+#         "----",
+#         "This issue was automatically created by AWS Lambda (CloudWatch Alarm → SNS → Lambda → Jira).",
+#     ]
+#     return "\n".join(parts)
 
 
-# 重要度に応じてpriorityフィールドを追加するなどの拡張
+# ===== 優先度決定ロジック =====
 def _decide_priority(alarm_name: str, metric_name: str) -> dict:
-    # すべて小文字にしてから判定
+    """
+    アラーム名・メトリクス名からJiraの優先度をざっくり決定する。
+    実運用では適宜、キーワードは調整する。
+    """
     alarm_lower = (alarm_name or "").lower()
     metric_lower = (metric_name or "").lower()
 
@@ -261,16 +412,42 @@ def _decide_priority(alarm_name: str, metric_name: str) -> dict:
 
     return {"name": "Medium"}
 
-
-def _create_jira_issue(summary: str, description_adf: dict, metric_name: str) -> str:
+# ===== Jira Issue 作成 or コメント追記のメイン関数 =====
+def _create_jira_issue(
+    summary: str,
+    description_adf: dict,
+    metric_name: str,
+    alarm_name: str,
+    new_state: str,
+    reason: str,
+    timestamp: str,
+    namespace: str,
+    region: str,
+    lambda_name: str,
+) -> str:
     """
     Jira にインシデントチケットを1件作成し、Issue Key を返す。
+    - 同じ summary を持つ未解決チケットが既に存在する場合は新規作成せず、コメントを追加してその Issue Key を返す。
+    - 存在しない場合：
+        - 新規チケットを作成し、その Issue Key を返す。
     """
     secret = _load_jira_secret()
 
     # logger.info("Secret JIRA_PROJECT_KEY raw: %r", secret.get("JIRA_PROJECT_KEY"))
     # logger.info("Secret content keys: %s", list(secret.keys()))
 
+    # 1. 既存の未解決チケットを検索
+    existing_issue_key = _find_existing_issue_by_summary(secret, summary)
+    if existing_issue_key:
+        logger.info("Skipping creating new issue. Use existing issue: %s", existing_issue_key)
+        _add_comment_to_issue(secret, existing_issue_key, summary, 
+                            new_state, reason,
+                            timestamp, namespace,
+                            metric_name, region,
+                            lambda_name)
+        return existing_issue_key
+
+    # 2. 重複なければ新規チケット作成
     base_url = secret["JIRA_BASE_URL"].rstrip("/")
     project_key = secret["JIRA_PROJECT_KEY"]
 
@@ -287,8 +464,9 @@ def _create_jira_issue(summary: str, description_adf: dict, metric_name: str) ->
     ]
 
     url = f"{base_url}/rest/api/3/issue"
+    
 
-    priority = _decide_priority(summary, metric_name)
+    priority = _decide_priority(alarm_name, metric_name)
 
     fields = {
         "project": {"key": project_key},
@@ -327,10 +505,12 @@ def _create_jira_issue(summary: str, description_adf: dict, metric_name: str) ->
     return key
 
 
+# ===== Lambda ハンドラー =====
 def lambda_handler(event, context):
     """
+    エントリポイント
     SNS → CloudWatchアラームのメッセージを受け取り、
-    Jiraにインシデントチケットを作成するLambda。
+    Jiraにインシデントチケットを作成 or コメントを追記する。
     """
     logger.info("Received event: %s", json.dumps(event))
 
@@ -357,11 +537,28 @@ def lambda_handler(event, context):
             if d.get("name") == "FunctionName":
                 lambda_name = d.get("value")
 
-        # Jiraの summary と description を組み立て
+         # CloudWatch側の状態変化時刻（なければ SNS メッセージ時刻）
+        timestamp = message.get("StateChangeTime") or sns.get("Timestamp", "")
+
+        # Jira の summary と description(ADF) を組み立て
         summary = f"[CloudWatch Alarm] {alarm_name} is {new_state}"
         description_adf = build_adf_description(
             alarm_name, new_state, reason, region, namespace, metric_name, lambda_name, message
         )
-        _create_jira_issue(summary, description_adf, metric_name)
+        _create_jira_issue(
+            summary,
+            description_adf,
+            metric_name,
+            alarm_name,
+            new_state,
+            reason,
+            timestamp,
+            namespace,
+            region,
+            lambda_name,
+        )
 
     return {"status": "ok"}
+
+
+
